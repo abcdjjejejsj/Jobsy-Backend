@@ -1,0 +1,136 @@
+require("dotenv").config();
+const cors = require("cors");
+const express=require("express");
+const path=require("path");
+const jwt = require('jsonwebtoken');
+const cookieParser = require("cookie-parser");
+const route=require("./Routes/userRoutes");
+const bertRoute=require("./Routes/routes");
+const getData=require("./Routes/getData");
+const applicationRoutes=require("./Routes/applicationRoutes");
+const quizRoutes=require("./Routes/quizRoutes");
+const notificationRoutes=require("./Routes/notificationRoutes");
+const atsRoutes=require("./Routes/atsRoutes");
+const fraudRoutes=require("./Routes/fraudRoutes");
+const pdf=require("./2");
+const app=express();
+const sec = process.env.secret_key;
+app.use(cors({
+    origin: "https://your-frontend-vercel-url.vercel.app", // frontend URL
+    credentials: true
+}));
+
+app.use(express.urlencoded({extended:true}));
+app.use(express.json());
+app.use(cookieParser());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+function validateUser(req, res, next) {
+    const token = req.cookies.token;
+    if (!token) return res.redirect("/login");
+    jwt.verify(token, sec, (err, user) => {
+        if (err) {
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "strict"
+            });
+            console.log("validation error : ",err);
+            return res.sendStatus(403);
+        };
+        req.user = user;
+        console.log("data from token:", user);
+        console.log("user.email :", user.email);
+        console.log("password :",user.password)
+        next();
+    });
+}
+function validateAdmin(req, res, next) {
+    const token = req.cookies.token;
+    if (!token) return res.redirect("/login");
+    jwt.verify(token, sec, (err, user) => {
+        if (err) {
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none"
+            });
+            return res.sendStatus(403);
+        };
+        req.user = user;
+        console.log("data from token:", user);
+        console.log("user.email :", user.email);
+        if(user.email==process.env.GOV_EMAIL)
+        {
+            next();
+        }else{
+            res.sendStatus(403).send("Access Forbidden");
+        }
+    });
+}
+app.get("/heartbits",(req,res)=>{
+    res.send("Backend is live");
+})
+app.get("/government.html",validateAdmin,(req,res)=>{
+    res.sendFile(path.join(__dirname, '..', 'Frontend', `government.html`));
+})
+app.get("/candidate.html",validateUser,(req,res)=>{
+    res.sendFile(path.join(__dirname, '..', 'Frontend', `candidate.html`));
+})
+app.get("/cart.html",validateUser,(req,res)=>{
+    res.sendFile(path.join(__dirname, '..', 'Frontend', `cart.html`));
+})
+app.get("/delivery.html",validateUser,(req,res)=>{
+    res.sendFile(path.join(__dirname, '..', 'Frontend', `delivery.html`));
+})
+app.get("/wishlist.html",validateUser,(req,res)=>{
+    res.sendFile(path.join(__dirname, '..', 'Frontend', `wishlist.html`));
+})
+app.get("/profile.html",validateUser,(req,res)=>{
+    res.sendFile(path.join(__dirname, '..', 'Frontend', `profile.html`));
+})
+app.use(express.static(path.join(__dirname, '..','Frontend')));
+app.get("/",(req,res)=>{
+    res.redirect("/index.html");
+});
+app.get("/validateUser",validateUser,(req,res)=>{
+    res.send("success");
+})
+app.get("/admin",(req,res)=>{
+    res.redirect("/admin.html");
+})
+app.use("/api/parse-resume",pdf);
+app.use("/api",route);
+app.use("/bert",bertRoute);
+app.use("/getData",getData)
+app.use("/application",applicationRoutes)
+app.use("/quiz",quizRoutes)
+app.use("/notification",notificationRoutes)
+app.use("/ats",atsRoutes)
+app.use("/api/fraud",fraudRoutes)
+app.get('/:page', (req, res) => {
+    console.log("hello world");
+    if(req.params.page=="order")
+    {
+        res.redirect("/order.html");
+    }else if(req.params.page=="cart")
+    {
+        res.redirect("/cart.html");
+    }else if(req.params.page=="wishlist")
+    {
+        res.redirect("/wishlist.html");
+    }else if(req.params.page=="delivery")
+    {
+        res.redirect("/delivery.html");
+    }else if(req.params.page=="profile")
+    {
+        res.redirect("/profile.html");
+    }
+    if (req.params.page.includes('.'))
+        {
+            return res.status(404).send('Not found');
+        }
+    res.sendFile(path.join(__dirname, '..','Frontend', `${req.params.page}.html`));
+});
+app.listen(3400,()=>{
+    console.log("Server started at 3400");
+})
