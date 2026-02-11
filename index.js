@@ -16,7 +16,7 @@ const pdf=require("./2");
 const app=express();
 const sec = process.env.secret_key;
 app.use(cors({
-    origin: "https://your-frontend-vercel-url.vercel.app", // frontend URL
+    origin: "https://https://jobsy-two-pi.vercel.app/", // frontend URL
     credentials: true
 }));
 
@@ -32,7 +32,7 @@ function validateUser(req, res, next) {
             res.clearCookie("token", {
                 httpOnly: true,
                 secure: true,
-                sameSite: "strict"
+                sameSite: "none"
             });
             console.log("validation error : ",err);
             return res.sendStatus(403);
@@ -133,4 +133,5 @@ app.get('/:page', (req, res) => {
 });
 app.listen(3400,()=>{
     console.log("Server started at 3400");
+
 })
