@@ -16,7 +16,7 @@ const pdf=require("./2");
 const app=express();
 const sec = process.env.secret_key;
 app.use(cors({
-    origin: "https://jobsy-two-pi.vercel.app/", // frontend URL
+    origin: "https://jobsy-two-pi.vercel.app", // frontend URL
     credentials: true
 }));
 
@@ -135,4 +135,5 @@ app.listen(3400,()=>{
     console.log("Server started at 3400");
 
 })
+
 
